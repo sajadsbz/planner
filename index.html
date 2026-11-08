@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>دفترچه روزانه و برنامه‌ریزی من 🌸</title>
+  <!-- React & Libraries -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+  <style>
+    body { font-family: 'Vazirmatn', sans-serif; background-color: #FDFBF7; }
+    .book-shadow { box-shadow: 0 20px 40px -15px rgba(225, 29, 72, 0.1), 0 0 15px rgba(0,0,0,0.03); }
+  </style>
+</head>
+<body class="bg-[#FDFBF7] text-stone-700 min-h-screen py-8 px-4">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function App() {
+      const [waterCount, setWaterCount] = useState(() => Number(localStorage.getItem('water_c') || 0));
+      const [partnerName, setPartnerName] = useState(() => localStorage.getItem('p_name') || 'قشنگم');
+      const [isEditingName, setIsEditingName] = useState(false);
+      const [activeTab, setActiveTab] = useState('routines');
+      
+      const [routines, setRoutines] = useState(() => {
+        const saved = localStorage.getItem('routines_c');
+        return saved ? JSON.parse(saved) : [
+          { id: 1, text: 'روتین پوستی صبحگاهی و ضدآفتاب ✨', category: 'خودمراقبتی', done: false },
+          { id: 2, text: 'نوشیدن آب گرم و لیمو / چای آرامش‌بخش 🍵', category: 'سلامت', done: false },
+          { id: 3, text: '۲۰ دقیقه پیاده‌روی یا یوگا 🌿', category: 'ورزش', done: false },
+          { id: 4, text: 'مطالعه ۱۵ دقیقه کتاب دلخواه 📖', category: 'رشد فردی', done: false },
+          { id: 5, text: 'نوشتن حس‌وحال امروز و شکرگزاری 💖', category: 'آرامش', done: false }
+        ];
+      });
+
+      const [tasks, setTasks] = useState(() => {
+        const saved = localStorage.getItem('tasks_c');
+        return saved ? JSON.parse(saved) : [
+          { id: 101, text: 'بررسی پروژه‌ها و کارهای مهم امروز', done: false }
+        ];
+      });
+      const [newTask, setNewTask] = useState('');
+
+      const [selectedMood, setSelectedMood] = useState(() => localStorage.getItem('daily_mood') || 'happy');
+      const moods = [
+        { id: 'happy', emoji: '🥰', label: 'عالی و پرانرژی' },
+        { id: 'calm', emoji: '🌿', label: 'آرام و ریلکس' },
+        { id: 'tired', emoji: '🥱', label: 'خسته اما راضی' },
+        { id: 'need_hug', emoji: '🧸', label: 'نیاز به بغل' }
+      ];
+
+      const loveNotes = [
+        "«هر قدم کوچیکی که امروز برای اهدافت برمی‌داری، من بهت بیشتر افتخار می‌کنم!» 🌸✨",
+        "«یادت نره وسط کارها یه نفس عمیق بکشی و آب بخوری قشنگم!» 💧",
+        "«دنیا با لبخند و انرژی قشنگت جای خیلی بهتریه.» 💖",
+        "«تو قوی‌تر و بااستعدادتر از چیزی هستی که فکرشو می‌کنی!» 🪴"
+      ];
+      const [currentNoteIdx, setCurrentNoteIdx] = useState(0);
+
+      useEffect(() => { localStorage.setItem('water_c', waterCount); }, [waterCount]);
+      useEffect(() => { localStorage.setItem('routines_c', JSON.stringify(routines)); }, [routines]);
+      useEffect(() => { localStorage.setItem('tasks_c', JSON.stringify(tasks)); }, [tasks]);
+      useEffect(() => { localStorage.setItem('p_name', partnerName); }, [partnerName]);
+      useEffect(() => { localStorage.setItem('daily_mood', selectedMood); }, [selectedMood]);
+
+      const toggleRoutine = (id) => {
+        setRoutines(routines.map(r => {
+          if (r.id === id) {
+            if (!r.done && window.confetti) {
+              window.confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
+            }
+            return { ...r, done: !r.done };
+          }
+          return r;
+        }));
+      };
+
+      const toggleTask = (id) => {
+        setTasks(tasks.map(t => t.id === id ? { ...t, done: !t.done } : t));
+      };
+
+      const addTask = (e) => {
+        e.preventDefault();
+        if (!newTask.trim()) return;
+        setTasks([...tasks, { id: Date.now(), text: newTask.trim(), done: false }]);
+        setNewTask('');
+      };
+
+      const deleteTask = (id) => {
+        setTasks(tasks.filter(t => t.id !== id));
+      };
+
+      const completedRoutines = routines.filter(r => r.done).length;
+      const progressPercent = Math.round((completedRoutines / routines.length) * 100);
+
+      return (
+        <div className="max-w-xl mx-auto space-y-6">
+          {/* Header Card */}
+          <div className="bg-white/90 backdrop-blur border border-rose-100 rounded-3xl p-6 text-center book-shadow relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-rose-100/50 rounded-full blur-2xl -mr-8 -mt-8"></div>
+            <span className="text-4xl inline-block animate-pulse">🌸</span>
+            
+            <div className="mt-2 flex items-center justify-center gap-2">
+              {isEditingName ? (
+                <input 
+                  type="text" 
+                  value={partnerName} 
+                  onChange={(e) => setPartnerName(e.target.value)}
+                  onBlur={() => setIsEditingName(false)}
+                  autoFocus
+                  className="text-xl font-bold text-rose-800 text-center border-b-2 border-rose-300 focus:outline-none bg-transparent"
+                />
+              ) : (
+                <h1 onClick={() => setIsEditingName(true)} className="text-2xl font-bold text-rose-800 cursor-pointer flex items-center gap-1.5" title="برای تغییر اسم کلیک کن">
+                  دفترچه اختصاصی {partnerName}
+                  <span className="text-xs text-rose-400 font-normal">✏️</span>
+                </h1>
+              )}
+            </div>
+            <p className="text-stone-500 text-xs mt-1">«امروز قراره روز خیلی قشنگی باشه!»</p>
+          </div>
+
+          {/* Blooming Plant & Progress */}
+          <div className="bg-gradient-to-r from-emerald-50/80 to-teal-50/80 border border-emerald-100 rounded-3xl p-5 shadow-sm flex items-center justify-between">
+            <div className="space-y-1.5">
+              <span className="text-xs font-bold text-emerald-700 bg-white/80 px-3 py-1 rounded-full border border-emerald-200">
+                گلدون امروز تو 🌱
+              </span>
+              <h3 className="font-bold text-stone-800 text-base pt-1">
+                {progressPercent === 0 && 'دانه منتظر آب و تلاش امروز توئه!'}
+                {progressPercent > 0 && progressPercent < 100 && 'جوانه زد و داره قد می‌کشه! 🌿'}
+                {progressPercent === 100 && 'شکوفه کامل داد! امروز بی‌نظیر بودی 🌸'}
+              </h3>
+              <p className="text-xs text-emerald-600 font-medium">{completedRoutines} از {routines.length} روتین انجام شد ({progressPercent}٪)</p>
+            </div>
+            <div className="text-5xl transition-transform transform hover:scale-110">
+              {progressPercent === 0 && '🌱'}
+              {progressPercent > 0 && progressPercent < 100 && '🪴'}
+              {progressPercent === 100 && '💐'}
+            </div>
+          </div>
+
+          {/* Daily Water Tracker */}
+          <div className="bg-sky-50/80 border border-sky-100 rounded-3xl p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold text-sky-700 bg-white/80 px-3 py-1 rounded-full border border-sky-200">
+                ردیاب نوشیدن آب 💧
+              </span>
+              <span className="text-xs font-bold text-sky-800">{waterCount} از ۸ لیوان</span>
+            </div>
+            <div className="grid grid-cols-8 gap-1.5 pt-1">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(cup => (
+                <button
+                  key={cup}
+                  onClick={() => setWaterCount(cup === waterCount ? cup - 1 : cup)}
+                  className={`h-11 rounded-2xl flex items-center justify-center text-sm transition-all ${
+                    cup <= waterCount 
+                      ? 'bg-sky-400 text-white shadow-md shadow-sky-200 scale-105' 
+                      : 'bg-white/90 border border-sky-200 text-sky-300 hover:bg-sky-100'
+                  }`}
+                >
+                  💧
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Routines & Tasks Container */}
+          <div className="bg-white border border-stone-200/80 rounded-3xl p-5 book-shadow space-y-4">
+            <div className="flex border-b border-stone-100 pb-3 gap-4">
+              <button 
+                onClick={() => setActiveTab('routines')} 
+                className={`text-sm font-bold pb-1 transition-all ${activeTab === 'routines' ? 'text-rose-600 border-b-2 border-rose-500' : 'text-stone-400'}`}
+              >
+                روتین‌های روزانه ✨
+              </button>
+              <button 
+                onClick={() => setActiveTab('tasks')} 
+                className={`text-sm font-bold pb-1 transition-all ${activeTab === 'tasks' ? 'text-rose-600 border-b-2 border-rose-500' : 'text-stone-400'}`}
+              >
+                کارهای اضافه امروز 📝 ({tasks.length})
+              </button>
+            </div>
+
+            {activeTab === 'routines' ? (
+              <div className="space-y-2.5">
+                {routines.map(r => (
+                  <div
+                    key={r.id}
+                    onClick={() => toggleRoutine(r.id)}
+                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                      r.done ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800 line-through' : 'bg-stone-50/70 border-stone-200/60 hover:bg-stone-100/60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-white border border-stone-200 text-stone-500 px-2 py-0.5 rounded-lg">{r.category}</span>
+                      <span className="text-sm font-medium">{r.text}</span>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center border text-xs ${
+                      r.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-stone-300'
+                    }`}>
+                      {r.done ? '✓' : ''}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <form onSubmit={addTask} className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="کار جدید رو اینجا بنویس..."
+                    value={newTask}
+                    onChange={(e) => setNewTask(e.target.value)}
+                    className="flex-1 bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200"
+                  />
+                  <button type="submit" className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-2xl text-xs font-bold transition">
+                    افزودن
+                  </button>
+                </form>
+                <div className="space-y-2">
+                  {tasks.map(t => (
+                    <div
+                      key={t.id}
+                      className={`p-3 rounded-2xl border transition flex items-center justify-between ${
+                        t.done ? 'bg-stone-100/70 text-stone-400 line-through' : 'bg-stone-50/50 border-stone-100'
+                      }`}
+                    >
+                      <span onClick={() => toggleTask(t.id)} className="flex-1 text-sm cursor-pointer">{t.text}</span>
+                      <button onClick={() => deleteTask(t.id)} className="text-stone-300 hover:text-rose-500 text-xs px-2">✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Daily Mood */}
+          <div className="bg-amber-50/60 border border-amber-100 rounded-3xl p-4 flex items-center justify-between">
+            <span className="text-xs font-bold text-amber-800">حال و هوای امروز من:</span>
+            <div className="flex gap-2">
+              {moods.map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => setSelectedMood(m.id)}
+                  className={`w-9 h-9 rounded-2xl text-lg flex items-center justify-center transition-all ${
+                    selectedMood === m.id ? 'bg-white shadow border border-amber-200 scale-110' : 'opacity-60 hover:opacity-100'
+                  }`}
+                  title={m.label}
+                >
+                  {m.emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Secret Love Note */}
+          <div className="bg-rose-50/70 border border-rose-200/70 rounded-3xl p-5 text-center relative">
+            <span className="text-xs font-bold text-rose-500 bg-white px-3 py-1 rounded-full border border-rose-200">
+              💌 یادداشت اختصاصی برای تو
+            </span>
+            <p className="text-rose-900 text-sm font-bold mt-3 leading-relaxed px-2">
+              {loveNotes[currentNoteIdx]}
+            </p>
+            <button 
+              onClick={() => setCurrentNoteIdx((currentNoteIdx + 1) % loveNotes.length)}
+              className="text-[11px] text-rose-400 hover:text-rose-600 mt-2 font-medium"
+            >
+              🔄 یادداشت بعدی
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
